@@ -5,12 +5,16 @@
  */
 package play.api.libs.ws.ssl
 
-import java.security.KeyStore
+import java.nio.charset.Charset
+import java.security.KeyStore.{ProtectionParameter, PasswordProtection}
+import java.security.{DomainLoadStoreParameter, KeyStore}
 
 import java.io._
 import java.security.cert._
+import java.util
 import org.apache.commons.codec.binary.Base64
 import scala.collection.JavaConverters
+import scala.util.control.NonFatal
 
 trait KeyStoreBuilder {
   def build(): KeyStore
@@ -33,6 +37,39 @@ object KeystoreFormats {
 
 import KeystoreFormats._
 
+class DomainKeyStoreBuilder(data: String,
+                            identifier: String,
+                            passwords: Option[Map[String, KeyStore.ProtectionParameter]] = None) extends KeyStoreBuilder {
+
+  val logger = org.slf4j.LoggerFactory.getLogger(getClass)
+
+  def build(): KeyStore = {
+    // DKS doesn't allow you to read in a simple file or bytes.  Instead, it hardcodes entrance
+    // through a URI, and specifies a single anchor as the "view" into the possible keystores.
+    //
+    // http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/8-b132/java/security/DomainLoadStoreParameter.java
+    // http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/8-b132/sun/security/provider/DomainKeyStore.java
+    // http://cr.openjdk.java.net/~vinnie/dks/webrev.00/test/sun/security/provider/KeyStore/DKSTest.java.html
+    import java.nio.file._
+    val tempPath = Files.createTempFile("temp", "dks")
+    try {
+      Files.write(tempPath, data.getBytes("UTF-8"))
+      val uri = new java.net.URI(tempPath.toUri.toString + "#" + identifier)
+      val store = KeyStore.getInstance("DKS")
+
+      import scala.collection.JavaConverters._
+      // "keystore" -> new KeyStore.PasswordProtection("test123".toCharArray())
+      val passwords = Map[String, KeyStore.ProtectionParameter]().asJava
+
+      val loadParameter: KeyStore.LoadStoreParameter = new DomainLoadStoreParameter(uri, passwords)
+      store.load(loadParameter)
+      store
+    } finally {
+      case NonFatal(e) => Files.delete(tempPath)
+    }
+  }
+}
+
 /**
  * Builds a keystore from a string containing PEM encoded certificates, using CertificateFactory internally.
  *
@@ -46,7 +83,6 @@ class StringBasedKeyStoreBuilder(data: String) extends KeyStoreBuilder {
     val certs = readCertificates(data)
     val store = loadCertificates(certs)
     store
-
   }
 
   def readCertificates(certificateString: String): Seq[Certificate] = {
