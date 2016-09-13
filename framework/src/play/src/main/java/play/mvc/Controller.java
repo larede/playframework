@@ -3,8 +3,6 @@
  */
 package play.mvc;
 
-import play.i18n.Lang;
-
 import play.mvc.Http.HeaderNames;
 import play.mvc.Http.Response;
 import play.mvc.Http.Context;
@@ -12,6 +10,8 @@ import play.mvc.Http.Request;
 import play.mvc.Http.Session;
 import play.mvc.Http.Status;
 import play.mvc.Http.Flash;
+
+import java.util.Locale;
 
 /**
  * Superclass for a Java-based controller.
@@ -41,36 +41,36 @@ public abstract class Controller extends Results implements Status, HeaderNames 
      *
      * @return the language
      */
-    public static Lang lang() {
+    public static Locale lang() {
         return Http.Context.current().lang();
     }
 
-    /**
-     * Change durably the lang for the current user
-     *
-     * @param code New lang code to use (e.g. "fr", "en-US", etc.)
-     * @return true if the requested lang was supported by the application, otherwise false.
-     */
-    public static boolean changeLang(String code) {
-        return Http.Context.current().changeLang(code);
-    }
-
-    /**
-     * Change durably the lang for the current user
-     *
-     * @param lang New Lang object to use
-     * @return true if the requested lang was supported by the application, otherwise false.
-     */
-    public static boolean changeLang(Lang lang) {
-        return Http.Context.current().changeLang(lang);
-    }
-
-    /**
-     * Clear the lang for the current user.
-     */
-    public static void clearLang() {
-        Http.Context.current().clearLang();
-    }
+//    /**
+//     * Change durably the lang for the current user
+//     *
+//     * @param code New lang code to use (e.g. "fr", "en-US", etc.)
+//     * @return true if the requested lang was supported by the application, otherwise false.
+//     */
+//    public static boolean changeLang(String code) {
+//        return Http.Context.current().changeLang(code);
+//    }
+//
+//    /**
+//     * Change durably the lang for the current user
+//     *
+//     * @param lang New Lang object to use
+//     * @return true if the requested lang was supported by the application, otherwise false.
+//     */
+//    public static boolean changeLang(Lang lang) {
+//        return Http.Context.current().changeLang(lang);
+//    }
+//
+//    /**
+//     * Clear the lang for the current user.
+//     */
+//    public static void clearLang() {
+//        Http.Context.current().clearLang();
+//    }
 
     /**
      * Returns the current HTTP response.

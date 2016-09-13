@@ -145,14 +145,6 @@ class ResultsSpec extends Specification {
         Some(Set(preferencesCookie, sessionCookie)))
     }
 
-    "support clearing a language cookie using clearingLang" in withApplication {
-      val langs = new DefaultLangsProvider(Configuration.reference).get
-      implicit val messagesApi = new DefaultMessagesApiProvider(Environment.simple(), Configuration.reference, langs).get
-      val cookie = Cookies.decodeSetCookieHeader(Ok.clearingLang.header.headers("Set-Cookie")).head
-      cookie.name must_== Play.langCookieName
-      cookie.value must_== ""
-    }
-
     "allow discarding a cookie by deprecated names method" in withApplication {
       Cookies.decodeSetCookieHeader(Ok.discardingCookies(DiscardingCookie("blah")).header.headers("Set-Cookie")).head.name must_== "blah"
     }

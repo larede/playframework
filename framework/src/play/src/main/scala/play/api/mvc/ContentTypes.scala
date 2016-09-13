@@ -16,7 +16,6 @@ import akka.stream.stage._
 import akka.util.ByteString
 
 import play.api._
-import play.api.data.Form
 import play.api.http.Status._
 import play.api.http._
 import play.api.libs.Files.TemporaryFile
@@ -425,34 +424,35 @@ trait BodyParsers {
 
     // -- Form parser
 
-    /**
-     * Parse the body and binds it to a given form model.
-     *
-     * {{{
-     *   case class User(name: String)
-     *
-     *   val userForm: Form[User] = Form(mapping("name" -> nonEmptyText)(User.apply)(User.unapply))
-     *
-     *   Action(parse.form(userForm)) { request =>
-     *     Ok(s"Hello, \${request.body.name}!")
-     *   }
-     * }}}
-     *
-     * @param form Form model
-     * @param maxLength Max length allowed or returns EntityTooLarge HTTP response. If `None`, the default `play.http.parser.maxMemoryBuffer` configuration value is used.
-     * @param onErrors The result to reply in case of errors during the form binding process
-     */
-    def form[A](form: Form[A], maxLength: Option[Long] = None, onErrors: Form[A] => Result = (formErrors: Form[A]) => Results.BadRequest): BodyParser[A] =
-      BodyParser { requestHeader =>
-        import play.core.Execution.Implicits.trampoline
-        anyContent(maxLength)(requestHeader).map { resultOrBody =>
-          resultOrBody.right.flatMap { body =>
-            form
-              .bindFromRequest()(Request[AnyContent](requestHeader, body))
-              .fold(formErrors => Left(onErrors(formErrors)), a => Right(a))
-          }
-        }
-      }
+    //    /**
+    //     * Parse the body and binds it to a given form model.
+    //     *
+    //     * {{{
+    //     *   case class User(name: String)
+    //     *
+    //     *   val userForm: Form[User] = Form(mapping("name" -> nonEmptyText)(User.apply)(User.unapply))
+    //     *
+    //     *   Action(parse.form(userForm)) { request =>
+    //     *     Ok(s"Hello, \${request.body.name}!")
+    //     *   }
+    //     * }}}
+    //     *
+    //     * @param form Form model
+    //     * @param maxLength Max length allowed or returns EntityTooLarge HTTP response. If `None`, the default `play.http.parser.maxMemoryBuffer` configuration value is used.
+    //     * @param onErrors The result to reply in case of errors during the form binding process
+    //     */
+    // FIXME Commented out until this can be rehomed in play-forms (or via the default action builder)
+    //    def form[A](form: Form[A], maxLength: Option[Long] = None, onErrors: Form[A] => Result = (formErrors: Form[A]) => Results.BadRequest): BodyParser[A] =
+    //      BodyParser { requestHeader =>
+    //        import play.core.Execution.Implicits.trampoline
+    //        anyContent(maxLength)(requestHeader).map { resultOrBody =>
+    //          resultOrBody.right.flatMap { body =>
+    //            form
+    //              .bindFromRequest()(Request[AnyContent](requestHeader, body))
+    //              .fold(formErrors => Left(onErrors(formErrors)), a => Right(a))
+    //          }
+    //        }
+    //      }
 
     // -- Empty parser
 

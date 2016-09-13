@@ -51,6 +51,8 @@ object PlayImport {
 
   val ws = component("play-ws")
 
+  val forms = component("play-forms")
+
   val javaWs = component("play-java-ws")
 
   val specs2 = component("play-specs2")

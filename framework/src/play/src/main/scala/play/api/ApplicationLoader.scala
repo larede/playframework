@@ -3,10 +3,9 @@
  */
 package play.api
 
-import play.api.i18n.I18nComponents
 import play.core.{ DefaultWebCommands, SourceMapper, WebCommands }
 import play.utils.Reflect
-import play.api.inject.{ DefaultApplicationLifecycle, Injector, NewInstanceInjector, SimpleInjector }
+import play.api.inject.DefaultApplicationLifecycle
 
 /**
  * Loads an application.  This is responsible for instantiating an application given a context.

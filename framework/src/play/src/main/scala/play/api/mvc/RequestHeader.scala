@@ -4,12 +4,13 @@
 package play.api.mvc
 
 import java.security.cert.X509Certificate
+import java.util.Locale
 
-import play.api.http.{ HeaderNames, MediaRange, MediaType }
-import play.api.i18n.Lang
-import play.api.libs.typedmap.{ TypedEntry, TypedKey, TypedMap }
+import play.api.http.{HeaderNames, MediaRange, MediaType}
+import play.api.libs.typedmap.{TypedEntry, TypedKey, TypedMap}
 
 import scala.annotation.implicitNotFound
+import scala.util.Try
 
 /**
  * The HTTP request header. Note that it doesn’t contain the request body yet.
@@ -169,9 +170,13 @@ trait RequestHeader {
   /**
    * The Request Langs extracted from the Accept-Language header and sorted by preference (preferred first).
    */
-  lazy val acceptLanguages: Seq[play.api.i18n.Lang] = {
-    val langs = RequestHeader.acceptHeader(headers, HeaderNames.ACCEPT_LANGUAGE).map(item => (item._1, Lang.get(item._2)))
-    langs.sortWith((a, b) => a._1 > b._1).map(_._2).flatten
+  lazy val acceptLanguages: Seq[java.util.Locale] = {
+    def locale(tag:String): Option[Locale] = Try {
+      new Locale.Builder().setLanguageTag(tag).build()
+    }.toOption
+
+    val locales = RequestHeader.acceptHeader(headers, HeaderNames.ACCEPT_LANGUAGE).map(item => (item._1, locale(item._2)))
+    locales.sortWith((a, b) => a._1 > b._1).map(_._2).flatten
   }
 
   /**

@@ -18,9 +18,7 @@ import play.api.libs.typedmap.TypedMap;
 import play.api.mvc.Headers;
 import play.core.j.JavaParsers;
 import play.core.system.RequestIdProvider;
-import play.i18n.Lang;
-import play.i18n.Messages;
-import play.i18n.MessagesApi;
+
 import play.libs.Json;
 import play.libs.XML;
 import scala.Tuple2;
@@ -76,7 +74,7 @@ public class Http {
         private final Session session;
         private final Flash flash;
 
-        private Lang lang = null;
+        private Locale lang = null;
 
         /**
          * Creates a new HTTP context.
@@ -183,67 +181,63 @@ public class Http {
          *
          * @return the current lang
          */
-        public Lang lang() {
-            if (lang != null) {
-                return lang;
-            } else {
-                return messages().lang();
-            }
+        public Locale lang() {
+            return lang;
         }
 
-        /**
-         * @return the messages for the current lang
-         */
-        public Messages messages() {
-            Cookie langCookie = request().cookies().get(messagesApi().langCookieName());
-            Lang cookieLang = langCookie == null ? null : new Lang(play.api.i18n.Lang.apply(langCookie.value()));
-            LinkedList<Lang> langs = Lists.newLinkedList(request().acceptLanguages());
-            if (cookieLang != null) {
-                langs.addFirst(cookieLang);
-            }
-            if (lang != null) {
-                langs.addFirst(lang);
-            }
-            return messagesApi().preferred(langs);
-        }
+//        /**
+//         * @return the messages for the current lang
+//         */
+//        public Messages messages() {
+//            Cookie langCookie = request().cookies().get(messagesApi().langCookieName());
+//            Lang cookieLang = langCookie == null ? null : new Lang(play.api.i18n.Lang.apply(langCookie.value()));
+//            LinkedList<Lang> langs = Lists.newLinkedList(request().acceptLanguages());
+//            if (cookieLang != null) {
+//                langs.addFirst(cookieLang);
+//            }
+//            if (lang != null) {
+//                langs.addFirst(lang);
+//            }
+//            return messagesApi().preferred(langs);
+//        }
 
-        /**
-         * Change durably the lang for the current user.
-         *
-         * @param code New lang code to use (e.g. "fr", "en-US", etc.)
-         * @return true if the requested lang was supported by the application, otherwise false
-         */
-        public boolean changeLang(String code) {
-            return changeLang(Lang.forCode(code));
-        }
-
-        /**
-         * Change durably the lang for the current user.
-         *
-         * @param lang New Lang object to use
-         * @return true if the requested lang was supported by the application, otherwise false
-         */
-        public boolean changeLang(Lang lang) {
-            if (Lang.availables(currentApp()).contains(lang)) {
-                this.lang = lang;
-                scala.Option<String> domain = play.api.mvc.Session.domain();
-                response.setCookie(messagesApi().langCookieName(), lang.code(), null, play.api.mvc.Session.path(),
-                    domain.isDefined() ? domain.get() : null, messagesApi().langCookieSecure(), messagesApi().langCookieHttpOnly());
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        /**
-         * Clear the lang for the current user.
-         */
-        public void clearLang() {
-            this.lang = null;
-            scala.Option<String> domain = play.api.mvc.Session.domain();
-            response.discardCookie(messagesApi().langCookieName(), play.api.mvc.Session.path(),
-                domain.isDefined() ? domain.get() : null, messagesApi().langCookieSecure());
-        }
+//        /**
+//         * Change durably the lang for the current user.
+//         *
+//         * @param code New lang code to use (e.g. "fr", "en-US", etc.)
+//         * @return true if the requested lang was supported by the application, otherwise false
+//         */
+//        public boolean changeLang(String code) {
+//            return changeLang(Lang.forCode(code));
+//        }
+//
+//        /**
+//         * Change durably the lang for the current user.
+//         *
+//         * @param lang New Lang object to use
+//         * @return true if the requested lang was supported by the application, otherwise false
+//         */
+//        public boolean changeLang(Lang lang) {
+//            if (Lang.availables(currentApp()).contains(lang)) {
+//                this.lang = lang;
+//                scala.Option<String> domain = play.api.mvc.Session.domain();
+//                response.setCookie(messagesApi().langCookieName(), lang.code(), null, play.api.mvc.Session.path(),
+//                    domain.isDefined() ? domain.get() : null, messagesApi().langCookieSecure(), messagesApi().langCookieHttpOnly());
+//                return true;
+//            } else {
+//                return false;
+//            }
+//        }
+//
+//        /**
+//         * Clear the lang for the current user.
+//         */
+//        public void clearLang() {
+//            this.lang = null;
+//            scala.Option<String> domain = play.api.mvc.Session.domain();
+//            response.discardCookie(messagesApi().langCookieName(), play.api.mvc.Session.path(),
+//                domain.isDefined() ? domain.get() : null, messagesApi().langCookieSecure());
+//        }
 
         /**
          * Set the language for the current request, but don't
@@ -252,11 +246,9 @@ public class Http {
          * future requests.
          *
          * @param code the language code to set (e.g. "en-US")
-         * @throws IllegalArgumentException If the given language
-         * is not supported by the application.
          */
         public void setTransientLang(String code) {
-            setTransientLang(Lang.forCode(code));
+            setTransientLang(new Locale.Builder().setLanguageTag(code).build());
         }
 
         /**
@@ -266,15 +258,9 @@ public class Http {
          * future requests.
          *
          * @param lang the language to set
-         * @throws IllegalArgumentException If the given language
-         * is not supported by the application.
          */
-        public void setTransientLang(Lang lang) {
-            if (Lang.availables(currentApp()).contains(lang)) {
-                this.lang = lang;
-            } else {
-                throw new IllegalArgumentException("Language not supported in this application: " + lang + " not in Lang.availables()");
-            }
+        public void setTransientLang(Locale lang) {
+            this.lang = lang;
         }
 
         /**
@@ -338,18 +324,18 @@ public class Http {
              *
              * @return the current lang.
              */
-            public static Lang lang() {
+            public static Locale lang() {
                 return Context.current().lang();
             }
 
-            /**
-             * Returns the messages for the current lang
-             *
-             * @return the messages for the current lang
-             */
-            public static Messages messages() {
-                return Context.current().messages();
-            }
+            ///**
+            // * Returns the messages for the current lang
+            // *
+            // * @return the messages for the current lang
+            // */
+            //public static Messages messages() {
+            //    return Context.current().messages();
+            //}
 
             /**
              * Returns the current context.
@@ -381,15 +367,15 @@ public class Http {
             return new Context(id, header, request, session, flash, args);
         }
 
-        private play.i18n.MessagesApi messagesApi() {
-            // This is a real problem -- to avoid global state, you have to put messagesApi in the
-            // HTTP.Context thread local, or in the request itself.
-            //
-            // It would arguably be cleaner to apply messagesApi.lang(request) rather than the reverse
-            // but this is core API here.
-            play.api.i18n.MessagesApi scalaMessagesApi = currentApp().injector().instanceOf(play.api.i18n.MessagesApi.class);
-            return new MessagesApi(scalaMessagesApi);
-        }
+//        private play.i18n.MessagesApi messagesApi() {
+//            // This is a real problem -- to avoid global state, you have to put messagesApi in the
+//            // HTTP.Context thread local, or in the request itself.
+//            //
+//            // It would arguably be cleaner to apply messagesApi.lang(request) rather than the reverse
+//            // but this is core API here.
+//            play.api.i18n.MessagesApi scalaMessagesApi = currentApp().injector().instanceOf(play.api.i18n.MessagesApi.class);
+//            return new MessagesApi(scalaMessagesApi);
+//        }
 
         private play.api.Application currentApp() {
             return play.api.Play.current();
@@ -442,25 +428,25 @@ public class Http {
             return wrapped._requestHeader();
         }
 
-        @Override
-        public Lang lang() {
-            return wrapped.lang();
-        }
-
-        @Override
-        public boolean changeLang(String code) {
-            return wrapped.changeLang(code);
-        }
-
-        @Override
-        public boolean changeLang(Lang lang) {
-            return wrapped.changeLang(lang);
-        }
-
-        @Override
-        public void clearLang() {
-            wrapped.clearLang();
-        }
+//        @Override
+//        public Lang lang() {
+//            return wrapped.lang();
+//        }
+//
+//        @Override
+//        public boolean changeLang(String code) {
+//            return wrapped.changeLang(code);
+//        }
+//
+//        @Override
+//        public boolean changeLang(Lang lang) {
+//            return wrapped.changeLang(lang);
+//        }
+//
+//        @Override
+//        public void clearLang() {
+//            wrapped.clearLang();
+//        }
     }
 
     public static interface RequestHeader {
@@ -582,7 +568,7 @@ public class Http {
          *
          * @return the preference-ordered list of languages accepted by the client
          */
-        List<play.i18n.Lang> acceptLanguages();
+        List<Locale> acceptLanguages();
 
         /**
          * @return The media types set in the request Accept header, sorted by preference (preferred first)

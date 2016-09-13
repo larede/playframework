@@ -254,6 +254,29 @@ object PlayBuild extends Build {
       StreamsProject
     )
 
+  lazy val PlayFormsProject = PlayCrossBuiltProject("Play-Forms", "play-forms")
+    .enablePlugins(SbtTwirl)
+    .settings(
+      libraryDependencies ++= javaTestDeps ++ specsBuild,
+
+      sourceDirectories in (Compile, TwirlKeys.compileTemplates) := (unmanagedSourceDirectories in Compile).value,
+      TwirlKeys.templateImports += "play.api.templates.PlayMagic._",
+      mappings in (Compile, packageSrc) ++= {
+        // Add both the templates, useful for end users to read, and the Scala sources that they get compiled to,
+        // so omnidoc can compile and produce scaladocs for them.
+        val twirlSources = (sources in (Compile, TwirlKeys.compileTemplates)).value pair
+          relativeTo((sourceDirectories in (Compile, TwirlKeys.compileTemplates)).value)
+
+        val twirlTarget = (target in (Compile, TwirlKeys.compileTemplates)).value
+        // The pair with errorIfNone being false both creates the mappings, and filters non twirl outputs out of
+        // managed sources
+        val twirlCompiledSources = (managedSources in Compile).value.pair(relativeTo(twirlTarget), errorIfNone = false)
+
+        twirlSources ++ twirlCompiledSources
+      }
+    )
+    .dependsOn(PlayProject % "compile->compile;test->test")
+
   lazy val PlayServerProject = PlayCrossBuiltProject("Play-Server", "play-server")
     .settings(libraryDependencies ++= playServerDependencies)
     .dependsOn(
@@ -317,6 +340,7 @@ object PlayBuild extends Build {
     .settings(libraryDependencies ++= javaDeps ++ javaTestDeps)
     .dependsOn(
       PlayProject % "compile;test->test",
+      PlayFormsProject % "compile;test->test",
       PlayTestProject % "test",
       PlaySpecs2Project % "test",
       PlayGuiceProject % "test"
@@ -331,7 +355,8 @@ object PlayBuild extends Build {
   lazy val PlayGuiceProject = PlayCrossBuiltProject("Play-Guice", "play-guice")
     .settings(libraryDependencies ++= guiceDeps ++ specsBuild.map(_ % "test"))
     .dependsOn(
-      PlayProject % "compile;test->test"
+      PlayProject % "compile;test->test",
+      PlayFormsProject
     )
 
   lazy val SbtPluginProject = PlaySbtPluginProject("SBT-Plugin", "sbt-plugin")
@@ -448,6 +473,7 @@ object PlayBuild extends Build {
 
   lazy val publishedProjects = Seq[ProjectReference](
     PlayProject,
+    PlayFormsProject,
     PlayGuiceProject,
     BuildLinkProject,
     FunctionalProject,

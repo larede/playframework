@@ -84,12 +84,11 @@ object NotImplementedHttpRequestHandler extends HttpRequestHandler {
 class DefaultHttpRequestHandler(router: Router,
     errorHandler: HttpErrorHandler,
     configuration: HttpConfiguration,
-    systemFilters: SystemFilters,
     filters: EssentialFilter*) extends HttpRequestHandler {
 
   @Inject
-  def this(router: Router, errorHandler: HttpErrorHandler, configuration: HttpConfiguration, systemFilters: SystemFilters, filters: HttpFilters) =
-    this(router, errorHandler, configuration, systemFilters, filters.filters: _*)
+  def this(router: Router, errorHandler: HttpErrorHandler, configuration: HttpConfiguration, filters: HttpFilters) =
+    this(router, errorHandler, configuration, filters.filters: _*)
 
   private val context = configuration.context.stripSuffix("/")
 
@@ -174,8 +173,7 @@ class DefaultHttpRequestHandler(router: Router,
    * Apply filters to the given action.
    */
   protected def filterAction(next: EssentialAction): EssentialAction = {
-    val systemNext = systemFilters.filters.foldRight(next)(_ apply _)
-    filters.foldRight(systemNext)(_ apply _)
+    filters.foldRight(next)(_ apply _)
   }
 
   /**
@@ -208,10 +206,9 @@ class DefaultHttpRequestHandler(router: Router,
 class JavaCompatibleHttpRequestHandler @Inject() (router: Router,
   errorHandler: HttpErrorHandler,
   configuration: HttpConfiguration,
-  systemFilters: SystemFilters,
   filters: HttpFilters,
   components: JavaHandlerComponents) extends DefaultHttpRequestHandler(router,
-  errorHandler, configuration, systemFilters, filters.filters: _*) {
+  errorHandler, configuration, filters.filters: _*) {
 
   // This is a Handler that, when evaluated, converts its underlying JavaHandler into
   // another handler.

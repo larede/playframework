@@ -200,7 +200,7 @@ class RequestHeaderImpl(header: RequestHeader) extends JRequestHeader {
 
   def headers = createHeaderMap(header.headers)
 
-  def acceptLanguages = header.acceptLanguages.map(new play.i18n.Lang(_)).asJava
+  def acceptLanguages = header.acceptLanguages.asJava
 
   def queryString = {
     header.queryString.mapValues(_.toArray).asJava

@@ -4,7 +4,6 @@
 package play.api
 
 import akka.stream.Materializer
-import play.api.i18n.MessagesApi
 import play.utils.Threads
 
 import scala.concurrent.Await
@@ -121,24 +120,6 @@ object Play {
     }
     _currentApp = null
   }
-
-  /**
-   * Returns the name of the cookie that can be used to permanently set the user's language.
-   */
-  def langCookieName(implicit messagesApi: MessagesApi): String =
-    messagesApi.langCookieName
-
-  /**
-   * Returns whether the language cookie should have the secure flag set.
-   */
-  def langCookieSecure(implicit messagesApi: MessagesApi): Boolean =
-    messagesApi.langCookieSecure
-
-  /**
-   * Returns whether the language cookie should have the HTTP only flag set.
-   */
-  def langCookieHttpOnly(implicit messagesApi: MessagesApi): Boolean =
-    messagesApi.langCookieHttpOnly
 
   /**
    * A convenient function for getting an implicit materializer from the current application

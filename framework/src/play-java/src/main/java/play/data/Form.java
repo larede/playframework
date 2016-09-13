@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.*;
 
+import play.i18n.Lang;
 import play.i18n.Messages;
 import play.i18n.MessagesApi;
 import play.mvc.Http;
@@ -337,7 +338,7 @@ public class Form<T> {
                 ValidationError validationError;
                 if (error.isBindingFailure()) {
                     ImmutableList.Builder<String> builder = ImmutableList.builder();
-                    Optional<Messages> msgs = Optional.ofNullable(Http.Context.current.get()).map(Http.Context::messages);
+                    Optional<Messages> msgs = Optional.of(messagesApi.preferred(Http.Context.current.get().request()));
                     for (String code: error.getCodes()) {
                         code = code.replace("typeMismatch", "error.invalid");
                         if (!msgs.isPresent() || msgs.get().isDefinedAt(code)) {
@@ -515,7 +516,7 @@ public class Form<T> {
      * Returns the form errors serialized as Json.
      */
     public com.fasterxml.jackson.databind.JsonNode errorsAsJson() {
-        return errorsAsJson(Http.Context.current() != null ? Http.Context.current().lang() : null);
+        return errorsAsJson(Http.Context.current() != null ? new Lang(Http.Context.current().lang()) : null);
     }
 
     /**
@@ -757,7 +758,7 @@ public class Form<T> {
      */
     private static <T> T withRequestLocale(Supplier<T> code) {
         try {
-            LocaleContextHolder.setLocale(Http.Context.current().lang().toLocale());
+            LocaleContextHolder.setLocale(Http.Context.current().lang());
         } catch(Exception e) {
             // Just continue (Maybe there is no context or some internal error in LocaleContextHolder). System default locale will be used.
         }
