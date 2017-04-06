@@ -9,6 +9,7 @@ import java.util.{ Base64, Date, Locale }
 import javax.inject.Inject
 
 import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.impl.TextCodec
 import play.api._
 import play.api.http._
 import play.api.libs.crypto.CookieSigner
@@ -537,26 +538,30 @@ trait UrlEncodedCookieDataCodec extends CookieDataCodec {
  */
 trait JWTCookieDataCodec extends CookieDataCodec {
 
-  private val logger = play.api.Logger(getClass)
-
   def secretConfiguration: SecretConfiguration
 
   def jwtConfiguration: JWTConfiguration
 
-  private lazy val formatter = new JWTCookieDataCodec.JWTFormatter(secretConfiguration, jwtConfiguration, clock)
+  private val logger = play.api.Logger(getClass)
+
+  private val formatter = new JWTCookieDataCodec.JWTFormatter(secretConfiguration, jwtConfiguration, clock)
 
   /**
    * Encodes the data as a `String`.
    */
   override def encode(data: Map[String, String]): String = {
     val dataMap = Map(jwtConfiguration.dataClaim -> Jwts.claims(Scala.asJava(data)))
-    formatter.format(dataMap)
+    val encodedString = formatter.format(dataMap)
+    logger.trace(s"encode: encodedString = $encodedString")
+    encodedString
   }
 
   /**
    * Decodes from an encoded `String`.
    */
   override def decode(encodedString: String): Map[String, String] = {
+    logger.trace(s"decode: encodedString = $encodedString")
+
     import scala.collection.JavaConverters._
     import scala.collection.breakOut
     import io.jsonwebtoken._
@@ -580,6 +585,10 @@ trait JWTCookieDataCodec extends CookieDataCodec {
       case e: PrematureJwtException =>
         val id = e.getClaims.getId
         logger.error(s"decode: premature JWT found! id = $id, message = ${e.getMessage}")
+        Map.empty
+
+      case e: SignatureException =>
+        logger.error(s"decode: invalid JWT signature! message = ${e.getMessage}", e)
         Map.empty
 
       case e: ExpiredJwtException =>
@@ -623,10 +632,13 @@ object JWTCookieDataCodec {
     }
 
     private val base64EncodedSecret: String = {
-      Base64.getEncoder.encodeToString(
-        secretConfiguration.secret.getBytes(StandardCharsets.UTF_8)
-      )
+      TextCodec.BASE64.encode(secretConfiguration.secret)
     }
+
+    private val parser = Jwts.parser()
+      .setClock(jwtClock)
+      .setSigningKey(base64EncodedSecret)
+      .setAllowedClockSkewSeconds(jwtConfiguration.clockSkew.toSeconds)
 
     /**
      * Parses encoded JWT against configuration, returns all JWT claims.
@@ -635,11 +647,7 @@ object JWTCookieDataCodec {
      * @return the map of claims
      */
     def parse(encodedString: String): Map[String, AnyRef] = {
-      val jws: Jws[Claims] = Jwts.parser()
-        .setClock(jwtClock)
-        .setSigningKey(base64EncodedSecret)
-        .setAllowedClockSkewSeconds(jwtConfiguration.clockSkew.toSeconds)
-        .parseClaimsJws(encodedString)
+      val jws: Jws[Claims] = parser.parseClaimsJws(encodedString)
 
       val headerAlgorithm = jws.getHeader.getAlgorithm
       if (headerAlgorithm != jwtConfiguration.signatureAlgorithm) {
