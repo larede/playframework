@@ -315,7 +315,7 @@ object HttpConfiguration {
 case class JWTConfiguration(
   signatureAlgorithm: String = "HS256",
   expiresAfter: Option[FiniteDuration] = None,
-  clockSkew: FiniteDuration = 30.seconds,
+  clockSkew: FiniteDuration = 5.minutes,
   dataClaim: String = "data"
 )
 

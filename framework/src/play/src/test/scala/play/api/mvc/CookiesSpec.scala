@@ -170,7 +170,6 @@ class CookiesSpec extends Specification {
   class TestJWTCookieDataCodec extends JWTCookieDataCodec {
     val secretConfiguration = SecretConfiguration()
     val jwtConfiguration = JWTConfiguration()
-    override protected def uniqueId(): Option[String] = None
     override val clock = java.time.Clock.fixed(Instant.ofEpochMilli(0), ZoneId.of("UTC"))
   }
 

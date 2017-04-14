@@ -4,7 +4,6 @@
 package play.api.mvc
 
 import java.net.{ URLDecoder, URLEncoder }
-import java.nio.charset.StandardCharsets
 import java.util.{ Base64, Date, Locale }
 import javax.inject.Inject
 
@@ -603,9 +602,6 @@ trait JWTCookieDataCodec extends CookieDataCodec {
     }
   }
 
-  /** The unique id of the JWT, if any. */
-  protected def uniqueId(): Option[String] = Some(JWTCookieDataCodec.JWTIDGenerator.generateId())
-
   /** The clock used for checking expires / not before code */
   protected def clock: java.time.Clock = java.time.Clock.systemUTC()
 }
@@ -631,8 +627,9 @@ object JWTCookieDataCodec {
       override def now(): Date = java.util.Date.from(clock.instant())
     }
 
-    private val base64EncodedSecret: String = {
-      TextCodec.BASE64.encode(secretConfiguration.secret)
+    private val base64EncodedSecret = {
+      // maps to io.jsonwebtoken.impl.crypto.DefaultJwtSignatureValidator
+      TextCodec.BASE64URL.encode(secretConfiguration.secret)
     }
 
     private val parser = Jwts.parser()
@@ -691,13 +688,6 @@ object JWTCookieDataCodec {
     }
   }
 
-  /** Utility object to generate random nonces for JWT from SecureRandom */
-  private[play] object JWTIDGenerator {
-    private val sr = new java.security.SecureRandom()
-    def generateId(): String = {
-      new java.math.BigInteger(130, sr).toString(32)
-    }
-  }
 }
 
 /**
