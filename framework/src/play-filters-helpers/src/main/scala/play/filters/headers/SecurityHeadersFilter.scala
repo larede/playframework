@@ -21,7 +21,6 @@ import play.api.mvc._
  * <li>{{play.filters.headers.xssProtection}} - sets xssProtection.  Some("1; mode=block") by default.
  * <li>{{play.filters.headers.contentTypeOptions}} - sets contentTypeOptions. Some("nosniff") by default.
  * <li>{{play.filters.headers.permittedCrossDomainPolicies}} - sets permittedCrossDomainPolicies. Some("master-only") by default.
- * <li>{{play.filters.headers.contentSecurityPolicy}} - sets contentSecurityPolicy. Some("default-src 'self'") by default.
  * <li>{{play.filters.headers.referrerPolicy}} - sets referrerPolicy.  Some("origin-when-cross-origin, strict-origin-when-cross-origin") by default.
  * <li>{{play.filters.headers.allowActionSpecificHeaders}} - sets whether .withHeaders may be used to provide page-specific overrides.  False by default.
  * </ul>
@@ -30,7 +29,6 @@ import play.api.mvc._
  * @see <a href="http://blogs.msdn.com/b/ie/archive/2008/09/02/ie8-security-part-vi-beta-2-update.aspx">X-Content-Type-Options</a>
  * @see <a href="http://blogs.msdn.com/b/ie/archive/2008/07/02/ie8-security-part-iv-the-xss-filter.aspx">X-XSS-Protection</a>
  * @see <a href="http://www.html5rocks.com/en/tutorials/security/content-security-policy/">Content-Security-Policy</a>
- * @see <a href="http://www.adobe.com/devnet/articles/crossdomain_policy_file_spec.html">Cross Domain Policy File Specification</a>
  * @see <a href="https://www.w3.org/TR/referrer-policy/">Referrer Policy</a>
  */
 object SecurityHeadersFilter {
@@ -38,7 +36,6 @@ object SecurityHeadersFilter {
   val X_XSS_PROTECTION_HEADER = "X-XSS-Protection"
   val X_CONTENT_TYPE_OPTIONS_HEADER = "X-Content-Type-Options"
   val X_PERMITTED_CROSS_DOMAIN_POLICIES_HEADER = "X-Permitted-Cross-Domain-Policies"
-  val CONTENT_SECURITY_POLICY_HEADER = "Content-Security-Policy"
   val REFERRER_POLICY = "Referrer-Policy"
 
   /**
@@ -69,7 +66,6 @@ object SecurityHeadersFilter {
  * @param xssProtection "X-XSS-Protection":
  * @param contentTypeOptions "X-Content-Type-Options"
  * @param permittedCrossDomainPolicies "X-Permitted-Cross-Domain-Policies".
- * @param contentSecurityPolicy "Content-Security-Policy"
  * @param referrerPolicy "Referrer-Policy"
  */
 case class SecurityHeadersConfig(
@@ -77,7 +73,6 @@ case class SecurityHeadersConfig(
     xssProtection: Option[String] = Some("1; mode=block"),
     contentTypeOptions: Option[String] = Some("nosniff"),
     permittedCrossDomainPolicies: Option[String] = Some("master-only"),
-    contentSecurityPolicy: Option[String] = Some("default-src 'self'"),
     referrerPolicy: Option[String] = Some("origin-when-cross-origin, strict-origin-when-cross-origin"),
     allowActionSpecificHeaders: Boolean = false) {
   def this() {
@@ -96,8 +91,6 @@ case class SecurityHeadersConfig(
     copy(contentTypeOptions = contentTypeOptions.asScala)
   def withPermittedCrossDomainPolicies(permittedCrossDomainPolicies: ju.Optional[String]): SecurityHeadersConfig =
     copy(permittedCrossDomainPolicies = permittedCrossDomainPolicies.asScala)
-  def withContentSecurityPolicy(contentSecurityPolicy: ju.Optional[String]): SecurityHeadersConfig =
-    copy(contentSecurityPolicy = contentSecurityPolicy.asScala)
   def withReferrerPolicy(referrerPolicy: ju.Optional[String]): SecurityHeadersConfig = copy(referrerPolicy = referrerPolicy.asScala)
 }
 
@@ -114,7 +107,6 @@ object SecurityHeadersConfig {
       xssProtection = config.get[Option[String]]("xssProtection"),
       contentTypeOptions = config.get[Option[String]]("contentTypeOptions"),
       permittedCrossDomainPolicies = config.get[Option[String]]("permittedCrossDomainPolicies"),
-      contentSecurityPolicy = config.get[Option[String]]("contentSecurityPolicy"),
       referrerPolicy = config.get[Option[String]]("referrerPolicy"),
       allowActionSpecificHeaders = config.get[Option[Boolean]]("allowActionSpecificHeaders").getOrElse(false))
   }
@@ -141,7 +133,6 @@ class SecurityHeadersFilter @Inject() (config: SecurityHeadersConfig) extends Es
       config.xssProtection.map(X_XSS_PROTECTION_HEADER -> _),
       config.contentTypeOptions.map(X_CONTENT_TYPE_OPTIONS_HEADER -> _),
       config.permittedCrossDomainPolicies.map(X_PERMITTED_CROSS_DOMAIN_POLICIES_HEADER -> _),
-      config.contentSecurityPolicy.map(CONTENT_SECURITY_POLICY_HEADER -> _),
       config.referrerPolicy.map(REFERRER_POLICY -> _)
     ).flatten
 
